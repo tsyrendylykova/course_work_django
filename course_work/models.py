@@ -1,4 +1,5 @@
 from django.db import models
+from geoposition import Geoposition
 from geoposition.fields import GeopositionField
 
 
@@ -12,7 +13,7 @@ class Driver(models.Model):
 
 class Location(models.Model):
     name = models.CharField(max_length=50)
-    point = GeopositionField()
+    point = GeopositionField(default=Geoposition(55.7558, 37.6173))
 
     def __str__(self):
         return self.name
@@ -23,7 +24,7 @@ class Road(models.Model):
     time = models.IntegerField()
 
     def __str__(self):
-        return (self.start, self.end)
+        return '{},{},{}'.format(self.start, self.end, self.time)
 
 class Passenger(models.Model):
     start = models.ForeignKey('Location', related_name='fk_passenger_start')
@@ -33,4 +34,4 @@ class Passenger(models.Model):
     date = models.DateField()
 
     def __str__(self):
-        return self.name
+        return '{},{},{},{},{}'.format(self.start, self.end, self.name, self.price, self.date)

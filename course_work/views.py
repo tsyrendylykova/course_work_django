@@ -1,6 +1,8 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from course_work.models import Driver, Location
-from course_work.search_engine import find_passengers
+import random
+
+from django.shortcuts import render, redirect
+from course_work.models import Driver
+from course_work.search_engine import start_v, dijkstra, get_graph, find_N_optimal_passengers
 from .forms import IndexForm, DriverForm
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -8,7 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist
 def passenger_list(request):
     return render(request, 'course_work/passenger_list.html', {})
 
-def index(request):
+def login(request):
     if request.method == "POST":
         form = IndexForm(request.POST)
         if form.is_valid():
@@ -16,17 +18,17 @@ def index(request):
             password = form.cleaned_data.get('password')
             try:
                 d = Driver.objects.filter(login__exact=login).filter(password__exact=password).get()
-                return redirect('workspace')
-            except ObjectDoesNotExist:
                 return redirect('index')
+            except ObjectDoesNotExist:
+                return redirect('login')
 
     else:
         form = IndexForm()
 
-    return render(request, 'course_work/index.html', {'form': form})
+    return render(request, 'course_work/login.html', {'form': form})
 
 
-def workspace(request):
+def index(request):
     if request.method == "POST":
         form = DriverForm(data=request.POST)
         if form.is_valid():
@@ -35,11 +37,12 @@ def workspace(request):
             date = form.cleaned_data.get('date')
             number_of_free_seats = form.cleaned_data.get('number_of_free_seats')
 
-            print(start_point, end_point, date, number_of_free_seats)
-
-            passengers_result = find_passengers(start_point, end_point, date, number_of_free_seats)
-
-            return render(request, 'course_work/workspace.html', {'form': form, 'passengers_list': passengers_result})
+            current_point, end, route, visited, distances, predecessors = start_v(start_point.name, end_point.name)
+            G = get_graph()
+            dijkstra(G, current_point, end, route, visited, distances, predecessors)
+            print(route)
+            passengers_result = find_N_optimal_passengers(start_point, end_point, date, number_of_free_seats)
+            return render(request, 'course_work/index.html', {'form': form, 'passengers_list': passengers_result, 'route': route})
     else:
         form = DriverForm()
-    return render(request, 'course_work/workspace.html', {'form': form})
+    return render(request, 'course_work/index.html', {'form': form})
